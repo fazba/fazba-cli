@@ -1,0 +1,2 @@
+# fazba-cli
+custom scaffolding
