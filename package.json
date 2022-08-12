@@ -1,0 +1,31 @@
+{
+  "name": "fazba-cli",
+  "version": "1.0.0",
+  "description": "custom scaffolding",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "create": "index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fazba/fazba-cli.git"
+  },
+  "keywords": [
+    "cli"
+  ],
+  "engines": {
+    "node": "^14.18.0 || >=16.0.0"
+  },
+  "author": "fazba",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fazba/fazba-cli/issues"
+  },
+  "homepage": "https://github.com/fazba/fazba-cli#readme",
+  "dependencies": {
+    "kolorist": "^1.5.1",
+    "minimist": "^1.2.6",
+    "prompts": "^2.4.2"
+  }
+}
