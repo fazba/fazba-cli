@@ -89,7 +89,7 @@ async function init() {
         },
         {
           type: () =>
-            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm',
+            !fs.existsSync(targetDir) || isEmpty(targetDir) ? null : 'confirm', //Prompt属性可以是函数。type字段的计算结果为虚值(falsy)的 Prompt 配置对象将被跳过。
           name: 'overwrite',
           message: () =>
             (targetDir === '.'
@@ -128,7 +128,7 @@ async function init() {
             const frameworkColor = framework.color
             return {
               title: frameworkColor(framework.name),
-              value: framework.name  //issue：原先framework应该为framework.name
+              value: framework
             }
           })
         },
@@ -172,7 +172,7 @@ async function init() {
   }
 
   // determine template
-  template = variant || framework || template
+  template = variant || framework?.name || template //issue：原先framework应该为framework.name
   console.log(`\nScaffolding project in ${root}...`)
   const templateDir = path.resolve(
     fileURLToPath(import.meta.url),
