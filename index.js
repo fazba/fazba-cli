@@ -140,7 +140,7 @@ async function init() {
           // @ts-ignore
           choices: (framework) =>
             framework.variants.map((variant) => {
-              const variantColor = variant.colortest
+              const variantColor = variant.color
               return {
                 title: variantColor(variant.name),
                 value: variant.name
