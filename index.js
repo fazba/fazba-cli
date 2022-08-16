@@ -36,7 +36,7 @@ const cwd = process.cwd()
  * 获取模板列表
  */
 const tempDir = path.join(cwd, 'fazba-cli-directory')
-await downloadTemplate(tempDir, 'fazba-cli-directory')
+await downloadTemplate(tempDir, 'fazba-cli-directory', '加载模板列表')
 const listDir = path.join(tempDir, 'list.json')
 const FRAMEWORKS = JSON.parse(fs.readFileSync(listDir), 'utf-8')
 fs.rmSync(tempDir, { recursive: true, force: true })
@@ -168,7 +168,7 @@ async function init() {
   /**
    * 写入文件
    */
-  await downloadTemplate(root, `template-${template}`)
+  await downloadTemplate(root, `template-${template}`, '下载')
   // copyLocalTemplate(template, root, overwrite)
 
   // package.json 文件单独处理

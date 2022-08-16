@@ -3,15 +3,15 @@ import download from 'download-git-repo'
 import { red } from 'kolorist'
 
 
-export default function downloadTemplate(destination, template) {
+export default function downloadTemplate(destination, template, msg) {
   return new Promise((resolve, reject) => {
     if (!destination) throw new Error(red('✖') + 'root error')
     download('fazba/' + template, destination, function (err) {
       if (!err) {
-        console.log('下载完成!');
+        console.log(msg + '完成!');
         resolve()
       } else {
-        console.log('下载失败!');
+        console.log(msg + '失败!');
         reject(err)
       }
     })
