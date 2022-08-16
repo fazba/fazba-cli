@@ -5,7 +5,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "create": "index.js"
+    "preinstall": "npx only-allow pnpm",
+    "create": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -24,6 +25,7 @@
   },
   "homepage": "https://github.com/fazba/fazba-cli#readme",
   "dependencies": {
+    "download-git-repo": "^3.0.2",
     "kolorist": "^1.5.1",
     "minimist": "^1.2.6",
     "prompts": "^2.4.2"

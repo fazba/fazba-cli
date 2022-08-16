@@ -1,10 +1,10 @@
 #!/usr/bin/env node
+//解决不同的用户node路径不同的问题，可以让系统动态的去查找node来执行你的脚本文件。
 
-// 高版本的node支持，node 前缀
 // @ts-check
+// 高版本的node支持，node 前缀
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 /**解析命令行的参数 链接：https://npm.im/minimist */
 import minimist from 'minimist'
@@ -22,46 +22,40 @@ import {
   yellow
 } from 'kolorist'
 
+import { formatTargetDir, isEmpty, isValidPackageName, toValidPackageName, emptyDir } from './tools.js'
+import afterDone from './afterDone.js'
+import copyLocalTemplate from './copyLocalTemplate.js'
+import downloadTemplate from './downloadTemplate.js'
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = minimist(process.argv.slice(2), { string: ['_'] })
 /**当前 Nodejs 的执行目录 */
 const cwd = process.cwd()
 
-const FRAMEWORKS = [
-  {
-    name: 'echarts',
-    color: green,
-  },
-  {
-    name: 'typescript',
-    color: green,
-  },
-  {
-    name: 'vue3.2',
-    color: green,
-    variants: [
-      {
-        name: 'vue3.2',
-        display: 'TypeScript',
-        color: green
-      },
-      {
-        name: 'vue3.2-ts',
-        display: 'TypeScript',
-        color: blue
-      }
-    ]
-  },
-]
+/**
+ * 获取模板列表
+ */
+const tempDir = path.join(cwd, 'fazba-cli-directory')
+await downloadTemplate(tempDir, 'fazba-cli-directory')
+const listDir = path.join(tempDir, 'list.json')
+const FRAMEWORKS = JSON.parse(fs.readFileSync(listDir), 'utf-8')
+fs.rmSync(tempDir, { recursive: true, force: true })
+//添加颜色
+FRAMEWORKS.map(v => {
+  v.color = green
+  v?.variants?.map(val => {
+    val.color = blue
+  })
+})
 
 const TEMPLATES = FRAMEWORKS.map(
   (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name]
 ).reduce((a, b) => a.concat(b), [])
-/**兼容某些编辑器或者电脑上不支持.gitignore */
-const renameFiles = {
-  _gitignore: '.gitignore'
-}
+
+//
+init().catch((e) => {
+  console.error(e)
+})
 
 async function init() {
   /**命令行第一个参数 */
@@ -74,7 +68,6 @@ async function init() {
   const getProjectName = () => targetDir === '.' ? path.basename(path.resolve()) : targetDir
 
   let result = {}
-  /**询问项目名、选择框架，选择框架变体:比如 react => react-ts 等 */
   try {
     result = await prompts(
       [
@@ -161,148 +154,31 @@ async function init() {
 
   // user choice associated with prompts
   const { framework, overwrite, packageName, variant } = result
-  // 重写已有目录 / 或者创建不存在的目录
-  /**目录 */
+  /**目标地址 */
   const root = path.join(cwd, targetDir)
-
+  // 重emptyDir写已有目录 / 或者创建不存在的目录
   if (overwrite) {
     emptyDir(root)  // 删除文件夹
   } else if (!fs.existsSync(root)) {  //fs.existsSync如果路径存在则返回 true，否则返回 false。
     fs.mkdirSync(root, { recursive: true }) // 新建文件夹
   }
-
   // determine template
   template = variant || framework?.name || template //issue：原先framework应该为framework.name
   console.log(`\nScaffolding project in ${root}...`)
-  const templateDir = path.resolve(
-    fileURLToPath(import.meta.url),
-    '..',
-    `template-${template}`
-  )
-  /**写入文件 */
-  const write = (file, content) => {
-    const targetPath = renameFiles[file]
-      ? path.join(root, renameFiles[file])
-      : path.join(root, file)
-    if (content) {
-      fs.writeFileSync(targetPath, content)
-    } else {
-      copy(path.join(templateDir, file), targetPath)
-    }
-  }
-  // 根据模板路径的文件写入目标路径
-  const files = fs.readdirSync(templateDir) //返回一个包含“指定目录下所有文件名称”的数组
-  for (const file of files.filter((f) => f !== 'package.json')) {
-    write(file)
-  }
+  /**
+   * 写入文件
+   */
+  await downloadTemplate(root, `template-${template}`)
+  // copyLocalTemplate(template, root, overwrite)
+
   // package.json 文件单独处理
-  const pkg = JSON.parse(
-    fs.readFileSync(path.join(templateDir, `package.json`), 'utf-8')
-  )
+  const targetPath = path.join(root, `package.json`)
+  const pkg = JSON.parse(fs.readFileSync(targetPath, 'utf-8'))
   pkg.name = packageName || getProjectName()
-  write('package.json', JSON.stringify(pkg, null, 2))
-  // 打印安装完成后的信息
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  console.log(`\nDone. Now run:\n`)
-  if (root !== cwd) {
-    console.log(`  cd ${path.relative(cwd, root)}`)
-  }
-  /**使用了什么包管理器创建项目，那么就输出 npm/yarn/pnpm 相应的命令 */
-  switch (pkgManager) {
-    case 'yarn':
-      console.log('  yarn')
-      console.log('  yarn dev')
-      break
-    default:
-      console.log(`  ${pkgManager} install`)
-      console.log(`  ${pkgManager} run dev`)
-      break
-  }
-}
+  fs.writeFileSync(targetPath, JSON.stringify(pkg, null, 2))
+  /**
+   * 打印安装完成后的信息
+   */
+  afterDone(root, cwd)
 
-/**
- * @param {string | undefined} targetDir
- * 替换反斜杠 / 为空字符串
- */
-function formatTargetDir(targetDir) {
-  return targetDir?.trim().replace(/\/+$/g, '')
 }
-/**
- * @param {string} path
- */
-function isEmpty(path) {
-  const files = fs.readdirSync(path)
-  return files.length === 0 || (files.length === 1 && files[0] === '.git')
-}
-/**
- * @param {string} projectName
- */
-function isValidPackageName(projectName) {
-  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(
-    projectName
-  )
-}
-/**
- * @param {string} projectName
- */
-function toValidPackageName(projectName) {
-  return projectName
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/^[._]/, '')
-    .replace(/[^a-z0-9-~]+/g, '-')
-}
-/**
- * @param {string} dir
- * 递归删除文件夹，相当于 rm -rf xxx
- */
-function emptyDir(dir) {
-  if (!fs.existsSync(dir)) {
-    return
-  }
-  for (const file of fs.readdirSync(dir)) {
-    fs.rmSync(path.resolve(dir, file), { recursive: true, force: true })
-  }
-}
-/**
- * @param {string} srcDir
- * @param {string} destDir
- * 如果是文件夹用 copyDir 拷贝
- */
-function copyDir(srcDir, destDir) {
-  /**同步地创建目录。 返回 undefined 或创建的第一个目录路径（如果 recursive 为 true） */
-  fs.mkdirSync(destDir, { recursive: true })
-  for (const file of fs.readdirSync(srcDir)) {  //fs.readdirSync返回一个包含“指定目录下所有文件名称”的数组对象
-    const srcFile = path.resolve(srcDir, file)
-    const destFile = path.resolve(destDir, file)
-    copy(srcFile, destFile)
-  }
-}
-function copy(src, dest) {
-  const stat = fs.statSync(src)
-  if (stat.isDirectory()) {
-    copyDir(src, dest)
-  } else {
-    fs.copyFileSync(src, dest)
-  }
-}
-/**
- * @param {string | undefined} userAgent process.env.npm_config_user_agent
- * @returns object | undefined
- */
-function pkgFromUserAgent(userAgent) {
-  if (!userAgent) return undefined
-  const pkgSpec = userAgent.split(' ')[0]
-  const pkgSpecArr = pkgSpec.split('/')
-  return {
-    name: pkgSpecArr[0],
-    version: pkgSpecArr[1]
-  }
-}
-
-
-init().catch((e) => {
-  console.error(e)
-})
