@@ -1,8 +1,11 @@
-# fazba-cli
-custom scaffolding
+# Installation
+`npm i fazba-cli`
 
-# repository
-github.com/fazba/fazba-cli
+# Usage
+`pnpm create`
+
+# fazba-cli
+a custom scaffolding
 
 # template directory
 github.com/fazba/fazba-cli-directory
