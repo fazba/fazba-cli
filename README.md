@@ -2,7 +2,7 @@
 `npm i fazba-cli`
 
 # Usage
-`pnpm create`
+`fazba-create`
 
 # fazba-cli
 a custom scaffolding

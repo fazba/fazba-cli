@@ -1,12 +1,11 @@
 {
   "name": "fazba-cli",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "custom scaffolding",
   "type": "module",
   "main": "index.js",
-  "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "create": "node index.js"
+  "bin": {
+    "fazba-create": "index.js"
   },
   "repository": {
     "type": "git",
