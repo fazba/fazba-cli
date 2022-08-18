@@ -17,7 +17,7 @@
   "engines": {
     "node": "^14.18.0 || >=16.0.0"
   },
-  "author": "fazba",
+  "author": "Black J",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/fazba/fazba-cli/issues"
